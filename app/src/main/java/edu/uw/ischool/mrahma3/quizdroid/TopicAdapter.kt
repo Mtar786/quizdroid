@@ -6,28 +6,37 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 
-class TopicAdapter(private val topics: List<String>, private val onItemClick: (String) -> Unit)
-    : RecyclerView.Adapter<TopicAdapter.TopicViewHolder>() {
-
-    inner class TopicViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val topicTextView: TextView = itemView.findViewById(R.id.topicTextView)
-
-        fun bind(topic: String) {
-            topicTextView.text = topic
-            itemView.setOnClickListener { onItemClick(topic) }
-        }
-    }
+class TopicAdapter(
+    private val topics: List<Topic>,
+    private val onItemClick: (String) -> Unit
+) : RecyclerView.Adapter<TopicAdapter.TopicViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TopicViewHolder {
-        val view = LayoutInflater.from(parent.context).inflate(R.layout.item_topic, parent, false)
+        val view = LayoutInflater.from(parent.context)
+            .inflate(R.layout.item_topic, parent, false)
         return TopicViewHolder(view)
     }
 
     override fun onBindViewHolder(holder: TopicViewHolder, position: Int) {
-        holder.bind(topics[position])
+        val topic = topics[position]
+        holder.bind(topic)
     }
 
     override fun getItemCount(): Int {
         return topics.size
+    }
+
+    inner class TopicViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        private val titleTextView: TextView = itemView.findViewById(R.id.titleTextView)
+        private val descriptionTextView: TextView = itemView.findViewById(R.id.descriptionTextView)
+
+        fun bind(topic: Topic) {
+            titleTextView.text = topic.title
+            descriptionTextView.text = topic.shortDescription
+
+            itemView.setOnClickListener {
+                onItemClick(topic.title)
+            }
+        }
     }
 }

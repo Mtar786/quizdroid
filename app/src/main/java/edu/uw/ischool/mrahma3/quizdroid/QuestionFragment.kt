@@ -10,40 +10,52 @@ import android.widget.Button
 import android.widget.RadioButton
 import android.widget.RadioGroup
 import android.widget.TextView
-import androidx.lifecycle.ViewModelProvider
 
 class QuestionFragment : Fragment() {
 
+    private lateinit var topic: String
     private var questionIndex: Int = 0
-    private var topic: String? = null
-
-
+    private lateinit var topicRepository: TopicRepository
+    private lateinit var currentTopic: Topic
+    private lateinit var currentQuestion: Question
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
         val view = inflater.inflate(R.layout.fragment_question, container, false)
+        topicRepository = (requireActivity().application as QuizApp).topicRepository
 
-        // Retrieve the selected topic from arguments
-        val topic = arguments?.getString("topic")
-        this.topic = topic
+        retrieveArguments()
 
-        // Retrieve the question index from arguments
-        questionIndex = arguments?.getInt("questionIndex", 0) ?: 0
+        currentTopic = topicRepository.getTopicById(topic) ?: Topic("", "", "", R.drawable.ic_launcher_foreground, emptyList())
+        currentQuestion = currentTopic.questions.getOrElse(questionIndex) { Question("", emptyList(), 0) }
 
-        // Fetch questions and options based on the selected topic
-        val (questionText, options, correctAnswerIndex) = fetchQuestionsAndOptions(topic)
-        val correctAnswer = options[correctAnswerIndex]
+        setupQuestion(view)
+        setupSubmitButton(view)
 
-        // Update views with question information
-        view.findViewById<TextView>(R.id.questionTextView).text = questionText
-        view.findViewById<RadioButton>(R.id.option1RadioButton).text = options[0]
-        view.findViewById<RadioButton>(R.id.option2RadioButton).text = options[1]
-        view.findViewById<RadioButton>(R.id.option3RadioButton).text = options[2]
-        view.findViewById<RadioButton>(R.id.option4RadioButton).text = options[3]
+        return view
+    }
 
-        // Set up "Submit" button click listener
+    private fun retrieveArguments() {
+        topic = requireArguments().getString("topic") ?: ""
+        questionIndex = requireArguments().getInt("questionIndex", 0)
+    }
+
+    private fun setupQuestion(view: View) {
+        view.findViewById<TextView>(R.id.questionTextView).text = currentQuestion.questionText
+        val radioGroup = view.findViewById<RadioGroup>(R.id.radioGroup)
+        radioGroup.removeAllViews() // Clear existing views
+
+        currentQuestion.answers.forEachIndexed { index, answer ->
+            val radioButton = RadioButton(requireContext())
+            radioButton.text = answer
+            radioButton.id = View.generateViewId() // Generate a unique ID
+            radioGroup.addView(radioButton)
+        }
+    }
+
+    private fun setupSubmitButton(view: View) {
         val submitButton = view.findViewById<Button>(R.id.submitButton)
         submitButton.visibility = View.GONE // Initially hide the submit button
         val radioGroup = view.findViewById<RadioGroup>(R.id.radioGroup)
@@ -52,59 +64,31 @@ class QuestionFragment : Fragment() {
         }
 
         submitButton.setOnClickListener {
-            // Check if a radio button is selected
             val selectedRadioButtonId = radioGroup.checkedRadioButtonId
             if (selectedRadioButtonId != -1) {
-                // A radio button is selected, navigate to the answer page
                 val selectedRadioButton = view.findViewById<RadioButton>(selectedRadioButtonId)
                 val selectedAnswer = selectedRadioButton.text.toString()
+                val correctAnswer = currentQuestion.answers[currentQuestion.correctAnswerIndex]
 
                 val bundle = Bundle().apply {
                     putString("selectedAnswer", selectedAnswer)
                     putString("correctAnswer", correctAnswer)
                     putString("topic", topic)
-                    putInt("totalQuestions", 2)
+                    putInt("totalQuestions", currentTopic.questions.size)
                     putInt("questionIndex", questionIndex)
                 }
-                Log.i("QuestionFragment", "This is the bundle:" + bundle)
 
-                val fragment = AnswerFragment()
-                fragment.arguments = bundle
-
+                val fragment = AnswerFragment().apply {
+                    arguments = bundle
+                }
 
                 parentFragmentManager.beginTransaction()
                     .replace(R.id.fragment_container, fragment)
                     .addToBackStack(null)
                     .commit()
             } else {
-                Log.w("QuestionFragment", "Check the question fragment. Something went wrong.")
+                Log.w("QuestionFragment", "No option selected")
             }
-        }
-
-
-        return view
-    }
-
-
-    private fun fetchQuestionsAndOptions(topic: String?): Triple<String, Array<String>, Int> {
-        val questions = when (topic) {
-            "Math" -> getMathQuestions()
-            "Physics" -> getPhysicsQuestions()
-            "Marvel Super Heroes" -> getMarvelQuestions()
-            else -> emptyList()
-        }
-
-        return if (questions.isNotEmpty()) {
-            val question = questions[questionIndex]
-            val questionText = question.first
-            val options = question.second.toTypedArray()
-            val correctAnswerIndex = question.third
-            Triple(questionText, options, correctAnswerIndex)
-        } else {
-            // Handle the case when no questions are available for the topic
-            Log.d("QuestionFragment", "No questions available for $topic")
-            // You can display a message or take appropriate action here
-            Triple("No question available", arrayOf(), -1)
         }
     }
 
@@ -119,27 +103,4 @@ class QuestionFragment : Fragment() {
             return fragment
         }
     }
-
-    private fun getMathQuestions(): List<Triple<String, List<String>, Int>> {
-        return listOf(
-            Triple("What is 2 + 2?", listOf("3", "4", "5", "6"), 1), // Index of correct answer
-            Triple("What is the square root of 16?", listOf("2", "4", "8", "16"), 1)
-        )
-    }
-
-    private fun getPhysicsQuestions(): List<Triple<String, List<String>, Int>> {
-        return listOf(
-            Triple("What is Newton's first law of motion?", listOf("An object in motion stays in motion", "F = ma", "Every action has an equal and opposite reaction", "Objects fall at the same rate regardless of mass"), 0), // Index of correct answer
-            Triple("What is the SI unit of force?", listOf("Newton", "Watt", "Joule", "Pascal"), 0)
-        )
-    }
-
-    private fun getMarvelQuestions(): List<Triple<String, List<String>, Int>> {
-        return listOf(
-            Triple("Who is Iron Man's alter ego?", listOf("Tony Stark", "Steve Rogers", "Peter Parker", "Bruce Wayne"), 0), // Index of correct answer
-            Triple("What is the name of Thor's hammer?", listOf("Stormbreaker", "Mjolnir", "Gungnir", "Excalibur"), 1)
-        )
-    }
 }
-
-

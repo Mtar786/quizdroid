@@ -1,16 +1,18 @@
 package edu.uw.ischool.mrahma3.quizdroid
 
 import android.os.Bundle
-import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.ImageView
 import android.widget.TextView
-import java.io.Serializable
 
 class TopicOverviewFragment : Fragment() {
+
+    private lateinit var topic: Topic
+    private var totalQuestions: Int = 0
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -18,32 +20,48 @@ class TopicOverviewFragment : Fragment() {
     ): View? {
         val view = inflater.inflate(R.layout.fragment_topic_overview, container, false)
 
-        val topic = arguments?.getString("topic")
-        val totalQuestions = arguments?.getInt("totalQuestions") ?: 0
-        val topicDescription = when (topic) {
-            "Math" -> "Math Overview: Explore the world of numbers, quantity, and space"
-            "Physics" -> "Phyaics Overview: Unravel the principles governing matter and energy."
-            "Marvel Super Heroes" -> "Marvel Super Heroes Overview: Dive into the realm of iconic superheroes."
-            else -> "Description not available."
-        }
-
-        view.findViewById<TextView>(R.id.topicDescriptionTextView).text = topicDescription
-        view.findViewById<TextView>(R.id.totalQuestionsTextView).text = "Total Questions: $totalQuestions"
-
-        view.findViewById<Button>(R.id.beginButton).setOnClickListener {
-            // Navigate to QuestionFragment passing the topic
-            val bundle = Bundle()
-            bundle.putString("topic", topic)
-            val fragment = QuestionFragment()
-            fragment.arguments = bundle
-            requireActivity().supportFragmentManager.beginTransaction()
-                .replace(R.id.fragment_container, fragment)
-                .addToBackStack(null)
-                .commit()
-        }
+        retrieveArguments()
+        setupTopicDescription(view)
+        setupBeginButton(view)
 
         return view
     }
+
+    private fun retrieveArguments() {
+        val topicId = requireArguments().getString("topic") ?: ""
+        topic = (requireActivity().applicationContext as QuizApp).topicRepository.getTopicById(topicId) ?: Topic("", "", "", R.drawable.ic_launcher_foreground, emptyList())
+        totalQuestions = requireArguments().getInt("totalQuestions", 0)
+    }
+
+    private fun setupTopicDescription(view: View) {
+        view.findViewById<TextView>(R.id.topicDescriptionTextView).text = topic.longDescription
+        view.findViewById<TextView>(R.id.totalQuestionsTextView).text = "Total Questions: $totalQuestions"
+
+        // Set the icon in the ImageView
+        view.findViewById<ImageView>(R.id.iconImageView).setImageResource(topic.iconResId)
+    }
+
+    private fun setupBeginButton(view: View) {
+        view.findViewById<Button>(R.id.beginButton).setOnClickListener {
+            navigateToQuestionFragment()
+        }
+    }
+
+    private fun navigateToQuestionFragment() {
+        val bundle = Bundle().apply {
+            putString("topic", topic.title)
+        }
+        val fragment = QuestionFragment().apply {
+            arguments = bundle
+        }
+        requireActivity().supportFragmentManager.beginTransaction()
+            .replace(R.id.fragment_container, fragment)
+            .addToBackStack(null)
+            .commit()
+    }
 }
+
+
+
 
 

@@ -5,13 +5,14 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 
 class TopicListFragment : Fragment() {
 
-    private val topics = listOf("Math", "Physics", "Marvel Super Heroes")
+    private val topicRepository: TopicRepository by lazy {
+        (requireActivity().applicationContext as QuizApp).topicRepository
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -21,20 +22,23 @@ class TopicListFragment : Fragment() {
 
         val recyclerView = view.findViewById<RecyclerView>(R.id.recycler)
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
+
+        val topics = topicRepository.getTopics()
         val adapter = TopicAdapter(topics) { selectedTopic ->
-            // Handle topic item click event
-            val totalQuestions = 2 // Replace with the actual total number of questions for the selected topic
-            navigateToTopicOverview(selectedTopic)
+            // Get the total number of questions for the selected topic
+            val totalQuestions = topicRepository.getTopicById(selectedTopic)?.questions?.size ?: 0
+            navigateToTopicOverview(selectedTopic, totalQuestions)
         }
         recyclerView.adapter = adapter
 
         return view
     }
 
-    private fun navigateToTopicOverview(selectedTopic: String) {
-        val bundle = Bundle()
-        bundle.putString("topic", selectedTopic)
-        bundle.putInt("totalQuestions", 2)
+    private fun navigateToTopicOverview(selectedTopic: String, totalQuestions: Int) {
+        val bundle = Bundle().apply {
+            putString("topic", selectedTopic)
+            putInt("totalQuestions", totalQuestions)
+        }
         val fragment = TopicOverviewFragment()
         fragment.arguments = bundle
 
@@ -44,5 +48,6 @@ class TopicListFragment : Fragment() {
             .commit()
     }
 }
+
 
 
