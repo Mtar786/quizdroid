@@ -5,13 +5,6 @@
     android:orientation="vertical"
     android:padding="16dp">
 
-    <ImageView
-        android:id="@+id/iconImageView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
-        android:src="@drawable/ic_launcher_foreground" />
-
     <TextView
         android:id="@+id/topicDescriptionTextView"
         android:layout_width="match_parent"

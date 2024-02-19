@@ -1,6 +1,7 @@
 package edu.uw.ischool.mrahma3.quizdroid
 
 import android.os.Bundle
+import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -13,12 +14,17 @@ class TopicOverviewFragment : Fragment() {
 
     private lateinit var topic: Topic
     private var totalQuestions: Int = 0
+    private lateinit var topicRepository: TopicRepository
+
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
         val view = inflater.inflate(R.layout.fragment_topic_overview, container, false)
+
+        // Initialize the topicRepository with JsonTopicRepository
+        topicRepository = JsonTopicRepository(requireContext())
 
         retrieveArguments()
         setupTopicDescription(view)
@@ -29,16 +35,14 @@ class TopicOverviewFragment : Fragment() {
 
     private fun retrieveArguments() {
         val topicId = requireArguments().getString("topic") ?: ""
-        topic = (requireActivity().applicationContext as QuizApp).topicRepository.getTopicById(topicId) ?: Topic("", "", "", R.drawable.ic_launcher_foreground, emptyList())
+        topic = topicRepository.getTopicById(topicId) ?: Topic("", "",  emptyList())
         totalQuestions = requireArguments().getInt("totalQuestions", 0)
     }
 
     private fun setupTopicDescription(view: View) {
-        view.findViewById<TextView>(R.id.topicDescriptionTextView).text = topic.longDescription
+        Log.i("message", "here is the topic: " + topic.desc)
+        view.findViewById<TextView>(R.id.topicDescriptionTextView).text = topic.desc
         view.findViewById<TextView>(R.id.totalQuestionsTextView).text = "Total Questions: $totalQuestions"
-
-        // Set the icon in the ImageView
-        view.findViewById<ImageView>(R.id.iconImageView).setImageResource(topic.iconResId)
     }
 
     private fun setupBeginButton(view: View) {

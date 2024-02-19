@@ -32,7 +32,7 @@ class TopicAdapter(
 
         fun bind(topic: Topic) {
             titleTextView.text = topic.title
-            descriptionTextView.text = topic.shortDescription
+            descriptionTextView.text = topic.desc
 
             itemView.setOnClickListener {
                 onItemClick(topic.title)

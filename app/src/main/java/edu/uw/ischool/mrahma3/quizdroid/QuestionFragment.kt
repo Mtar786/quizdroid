@@ -24,11 +24,13 @@ class QuestionFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         val view = inflater.inflate(R.layout.fragment_question, container, false)
-        topicRepository = (requireActivity().application as QuizApp).topicRepository
+
+        // Initialize the topicRepository with JsonTopicRepository
+        topicRepository = JsonTopicRepository(requireContext())
 
         retrieveArguments()
 
-        currentTopic = topicRepository.getTopicById(topic) ?: Topic("", "", "", R.drawable.ic_launcher_foreground, emptyList())
+        currentTopic = topicRepository.getTopicById(topic) ?: Topic("", "",  emptyList())
         currentQuestion = currentTopic.questions.getOrElse(questionIndex) { Question("", emptyList(), 0) }
 
         setupQuestion(view)
@@ -43,7 +45,7 @@ class QuestionFragment : Fragment() {
     }
 
     private fun setupQuestion(view: View) {
-        view.findViewById<TextView>(R.id.questionTextView).text = currentQuestion.questionText
+        view.findViewById<TextView>(R.id.questionTextView).text = currentQuestion.text
         val radioGroup = view.findViewById<RadioGroup>(R.id.radioGroup)
         radioGroup.removeAllViews() // Clear existing views
 
@@ -68,7 +70,7 @@ class QuestionFragment : Fragment() {
             if (selectedRadioButtonId != -1) {
                 val selectedRadioButton = view.findViewById<RadioButton>(selectedRadioButtonId)
                 val selectedAnswer = selectedRadioButton.text.toString()
-                val correctAnswer = currentQuestion.answers[currentQuestion.correctAnswerIndex]
+                val correctAnswer = currentQuestion.answers[currentQuestion.answer]
 
                 val bundle = Bundle().apply {
                     putString("selectedAnswer", selectedAnswer)

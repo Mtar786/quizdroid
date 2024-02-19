@@ -4,7 +4,7 @@ import android.app.Application
 import android.util.Log
 
 class QuizApp : Application() {
-    val topicRepository: TopicRepository by lazy { InMemoryTopicRepository() }
+    val topicRepository: TopicRepository by lazy { JsonTopicRepository(this) }
 
     override fun onCreate() {
         super.onCreate()

@@ -1,22 +1,31 @@
 package edu.uw.ischool.mrahma3.quizdroid
 
+import android.content.Context
+import android.content.Intent
+import android.content.SharedPreferences
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
+import android.view.Menu
+import android.view.MenuItem
+import androidx.appcompat.widget.Toolbar
+
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.ViewModelProvider
+import androidx.preference.PreferenceManager
+import com.google.gson.Gson
+import java.io.IOException
 
-    data class Question(
-        val questionText: String,
+data class Question(
+        val text: String,
         val answers: List<String>,
-        val correctAnswerIndex: Int
+        val answer: Int
     )
 
     data class Topic(
         val title: String,
-        val shortDescription: String,
-        val longDescription: String,
-        val iconResId: Int,
+        val desc: String,
         val questions: List<Question>
     )
 
@@ -25,62 +34,144 @@ import androidx.lifecycle.ViewModelProvider
         fun getTopicById(topicId: String): Topic?
     }
 
-    class InMemoryTopicRepository : TopicRepository {
-        private val topics: List<Topic> = listOf(
-            Topic(
-                "Mathematics",
-                "Mathematics Overview",
-                "Explore the world of numbers, quantity, and space.",
-                R.drawable.ic_launcher_foreground, // Use a stock Android icon for mathematics
-                listOf(
-                    Question("What is 2 + 2?", listOf("3", "4", "5", "6"), 1),
-                    Question("What is the square root of 16?", listOf("2", "4", "8", "16"), 1)
-                )
-            ),
-            Topic(
-                "Physics",
-                "Physics Overview",
-                "Unravel the principles governing matter and energy.",
-                R.drawable.ic_launcher_foreground, // Use a stock Android icon for physics
-                listOf(
-                    Question("What is Newton's first law of motion?", listOf("An object in motion stays in motion", "F = ma", "Every action has an equal and opposite reaction", "Objects fall at the same rate regardless of mass"), 0),
-                    Question("What is the SI unit of force?", listOf("Newton", "Watt", "Joule", "Pascal"), 0)
-                )
-            ),
-            Topic(
-                "Marvel Super Heroes",
-                "Marvel Super Heroes Overview",
-                "Dive into the realm of iconic superheroes.",
-                R.drawable.ic_launcher_foreground, // Use a stock Android icon for Marvel Super Heroes
-                listOf(
-                    Question("Who is Iron Man's alter ego?", listOf("Tony Stark", "Steve Rogers", "Peter Parker", "Bruce Wayne"), 0),
-                    Question("What is the name of Thor's hammer?", listOf("Stormbreaker", "Mjolnir", "Gungnir", "Excalibur"), 1)
-                )
-            )
-        )
+class JsonTopicRepository(private val context: Context) : TopicRepository {
 
-        override fun getTopics(): List<Topic> {
-            return topics
-        }
-
-        override fun getTopicById(topicId: String): Topic? {
-            return topics.find { it.title == topicId }
-        }
+    override fun getTopics(): List<Topic> {
+        val topicsJson = context.assets.open("questions.json").bufferedReader().use { it.readText() }
+        return Gson().fromJson(topicsJson, Array<Topic>::class.java).toList()
     }
+
+    override fun getTopicById(topicId: String): Topic? {
+        return getTopics().find { it.title == topicId }
+    }
+}
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var quizViewModel: QuizViewModel
+    private lateinit var preferences: SharedPreferences
+    private var isDownloadInProgress: Boolean = false
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         quizViewModel = ViewModelProvider(this).get(QuizViewModel::class.java)
 
+        // Inflate the menu programmatically
+        val toolbar = findViewById<Toolbar>(R.id.toolbar)
+        setSupportActionBar(toolbar)
+
+        // Set onClickListener to the toolbar home button
+        toolbar.setOnMenuItemClickListener { menuItem ->
+            when (menuItem.itemId) {
+                R.id.action_settings -> {
+                    startActivity(Intent(this, Preferences::class.java))
+                    true
+                }
+                else -> false
+            }
+        }
+
+        // Add the preferences item to the action bar
+        supportActionBar?.apply {
+            setDisplayHomeAsUpEnabled(true)
+            setHomeAsUpIndicator(R.drawable.ic_launcher_background)
+        }
+
+        preferences = PreferenceManager.getDefaultSharedPreferences(this)
+        val url = preferences.getString("pref_key_url", "")
+        val refreshInterval = preferences.getString("pref_key_refresh_interval", "")
+
+        // Use the retrieved values as needed
+        // For example, log them to check if they are stored correctly
+        Log.d("MainActivity", "Question Data URL: $url")
+        Log.d("MainActivity", "Refresh Interval: $refreshInterval")
+
+        if (isDownloadInProgress) {
+            // Disable the settings or indicate to the user that they can't be changed now
+            disableSettings()
+        } else {
+            // Apply settings as usual
+            applySettings()
+        }
+
+        val topicRepository = JsonTopicRepository(this)
+        val topics = topicRepository.getTopics()
+
+        // Log the list of topics
+        Log.d("MainActivity", "Topics: $topics")
+
+        // Loop through the topics and log specific properties
+        topics.forEach { topic ->
+            Log.d("MainActivity", "Title: ${topic.title}")
+            Log.d("MainActivity", "Questions: ${topic.questions}")
+        }
+
         if (savedInstanceState == null) {
-            supportFragmentManager.beginTransaction().replace(R.id.fragment_container, TopicListFragment())
+            supportFragmentManager.beginTransaction()
+                .replace(R.id.fragment_container, TopicListFragment())
                 .commit()
         }
     }
+
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.menu_main, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            android.R.id.home -> {
+                // Handle the preferences action here
+                startActivity(Intent(this, Preferences::class.java))
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+
+    private fun applySettings() {
+        // Retrieve settings from SharedPreferences
+        val url = preferences.getString("url_key", DEFAULT_URL)
+        val downloadInterval = preferences.getInt("interval_key", DEFAULT_INTERVAL)
+
+        // Apply settings within the app
+        // For example, update URL to use for question data
+
+        // Handle download logic based on download status
+        // For example, prevent settings from taking effect until the next download starts if a download is underway
+        Log.i("MainActivity", "Settings applied - URL: $url, Download Interval: $downloadInterval minutes")
+    }
+
+    // Method to disable settings when a download is in progress
+    private fun disableSettings() {
+        // Disable the settings UI elements or show a message indicating that settings can't be changed now
+        Log.i("MainActivity", "Settings disabled due to download in progress.")
+    }
+
+    // Method to handle the download completion
+    private fun onDownloadComplete() {
+        isDownloadInProgress = false
+        // Apply settings when the download completes
+        applySettings()
+        Log.i("MainActivity", "Download complete.")
+    }
+
+    // Method to start the download
+    private fun startDownload() {
+        isDownloadInProgress = true
+        val downloadInterval = preferences.getInt("interval_key", DEFAULT_INTERVAL)
+        // Start the download process here with the specified interval
+        // Once the download is complete, call onDownloadComplete()
+        Log.i("MainActivity", "Download started with interval: $downloadInterval minutes")
+    }
+
+    companion object {
+        private const val DEFAULT_URL = "default_url"
+        private const val DEFAULT_INTERVAL = 60 // Default interval in minutes
+    }
+
+
+
 
     override fun onBackPressed() {
         val fragment = supportFragmentManager.findFragmentById(R.id.fragment_container)
@@ -110,7 +201,5 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
-
-
 
 }
