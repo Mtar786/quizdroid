@@ -78,13 +78,16 @@ class MainActivity : AppCompatActivity() {
         }
 
         preferences = PreferenceManager.getDefaultSharedPreferences(this)
+
         val url = preferences.getString("pref_key_url", "")
-        val refreshInterval = preferences.getString("pref_key_refresh_interval", "")
+        val downloadIntervalString = preferences.getString("pref_key_refresh_interval", DEFAULT_INTERVAL.toString())
+        val downloadInterval = downloadIntervalString?.toIntOrNull() ?: DEFAULT_INTERVAL
+
 
         // Use the retrieved values as needed
         // For example, log them to check if they are stored correctly
         Log.d("MainActivity", "Question Data URL: $url")
-        Log.d("MainActivity", "Refresh Interval: $refreshInterval")
+        Log.d("MainActivity", "Refresh Interval: $downloadInterval")
 
         if (isDownloadInProgress) {
             // Disable the settings or indicate to the user that they can't be changed now
@@ -131,8 +134,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun applySettings() {
         // Retrieve settings from SharedPreferences
-        val url = preferences.getString("url_key", DEFAULT_URL)
-        val downloadInterval = preferences.getInt("interval_key", DEFAULT_INTERVAL)
+        val url = preferences.getString("pref_key_url", DEFAULT_URL)
+        val downloadInterval = preferences.getString("pref_key_refresh_interval", DEFAULT_INTERVAL.toString())
 
         // Apply settings within the app
         // For example, update URL to use for question data

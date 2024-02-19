@@ -10,6 +10,8 @@
         android:key="pref_key_refresh_interval"
         android:title="Refresh Interval (minutes)"
         android:summary="How often to check for new downloads measured in minutes"
-        android:inputType="number" />
+        android:inputType="number"
+        android:digits="0123456789"
+        android:maxLength="3" />
 
 </PreferenceScreen>
