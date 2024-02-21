@@ -34,7 +34,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.util.concurrent.Executors
 
-data class Question(
+    data class Question(
             val text: String,
             val answers: List<String>,
             val answer: Int
@@ -113,7 +113,7 @@ class MainActivity : AppCompatActivity() {
             if (::progressDialog.isInitialized && progressDialog.isShowing) {
                 progressDialog.dismiss()
             }
-        }, 1000) // 1000 milliseconds = 1 second
+        }, 1000)
     }
 
 
@@ -122,7 +122,6 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         quizViewModel = ViewModelProvider(this).get(QuizViewModel::class.java)
 
-        // Inflate the menu programmatically
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
         // Set onClickListener to the toolbar home button
@@ -260,8 +259,6 @@ class MainActivity : AppCompatActivity() {
         } else if (networkInfo.type == ConnectivityManager.TYPE_WIFI ||
             networkInfo.type == ConnectivityManager.TYPE_MOBILE
         ) {
-            // Connected to WiFi or mobile data
-            // You can proceed with your normal app flow here
         }
     }
 
