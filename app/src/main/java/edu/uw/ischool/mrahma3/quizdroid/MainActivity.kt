@@ -92,7 +92,6 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var quizViewModel: QuizViewModel
     private lateinit var preferences: SharedPreferences
-    private var isDownloadInProgress: Boolean = false
     private val executor = Executors.newFixedThreadPool(5)
 
     private lateinit var progressDialog: ProgressDialog
@@ -156,9 +155,12 @@ class MainActivity : AppCompatActivity() {
         Log.d("MainActivity", "Question Data URL: $url")
         Log.d("MainActivity", "Refresh Interval: $downloadInterval")
 
-        executor.execute {
-            downloadFile(downloadUrl)
+        if (downloadUrl.isNotEmpty()) {
+            executor.execute {
+                downloadFile(downloadUrl)
+            }
         }
+
 
         val topicRepository = JsonTopicRepository(this)
         val topics = topicRepository.getTopics()
